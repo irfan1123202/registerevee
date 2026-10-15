@@ -1,0 +1,690 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Login & Sign Up — CampusEvents</title>
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            peach: {
+              50: '#fff7f2',
+              100: '#ffede5',
+              200: '#ffd3b9',
+              300: '#ffb38a',
+              400: '#fa8f58',
+              500: '#f2733a',
+              600: '#de5522',
+              700: '#b83f17',
+              800: '#933417',
+              900: '#772d17',
+            }
+          }
+        }
+      }
+    };
+  </script>
+  <!-- Google Fonts: Inter -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    body {
+      font-family: 'Inter', sans-serif;
+    }
+    * {
+      transition: background-color 300ms ease, border-color 300ms ease, color 300ms ease;
+    }
+    @media (prefers-reduced-motion: reduce) {
+      *, ::before, ::after {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+        scroll-behavior: auto !important;
+      }
+    }
+    .tab-active {
+      background-color: #f2733a;
+      color: #ffffff;
+      box-shadow: 0 4px 12px rgba(242, 115, 58, 0.28);
+    }
+    .slide-fade-in {
+      animation: slideFadeIn 0.32s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+    }
+    @keyframes slideFadeIn {
+      from {
+        opacity: 0;
+        transform: translateY(8px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+  </style>
+</head>
+<body class="bg-peach-50 dark:bg-stone-950 text-stone-800 dark:text-stone-100 min-h-screen flex flex-col justify-between selection:bg-peach-500 selection:text-white">
+
+  <!-- Top Navigation / Theme Toggle -->
+  <header class="w-full max-w-6xl mx-auto px-4 py-5 flex items-center justify-between">
+    <div class="flex items-center space-x-3">
+      <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-peach-600 to-peach-400 flex items-center justify-center text-white shadow-md shadow-peach-500/20">
+        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/>
+        </svg>
+      </div>
+      <div>
+        <span class="text-xl font-extrabold tracking-tight text-stone-900 dark:text-white">Campus<span class="text-peach-500">Events</span></span>
+        <span class="hidden sm:inline-block ml-2 text-xs font-semibold px-2 py-0.5 rounded-full bg-peach-100 dark:bg-stone-800 text-peach-700 dark:text-peach-300 border border-peach-200 dark:border-stone-700">Student Portal</span>
+      </div>
+    </div>
+
+    <!-- Theme Toggle Button -->
+    <button id="themeToggleBtn" type="button" aria-label="Toggle theme" class="flex items-center space-x-2 px-3.5 py-2 rounded-xl border border-peach-200 dark:border-stone-800 bg-white/80 dark:bg-stone-900/80 backdrop-blur text-stone-700 dark:text-stone-200 hover:border-peach-400 dark:hover:border-stone-600 focus:outline-none focus:ring-2 focus:ring-peach-500 shadow-sm transition">
+      <span id="themeIcon">
+        <svg class="w-4 h-4 text-peach-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"/>
+        </svg>
+      </span>
+      <span id="themeLabel" class="text-xs font-medium">Dark Mode</span>
+    </button>
+  </header>
+
+  <!-- Auth Card Container -->
+  <main class="w-full max-w-md mx-auto px-4 py-8 flex-1 flex flex-col justify-center">
+    
+    <!-- Top notification banner for success / global alerts -->
+    <div id="globalAlert" class="hidden mb-4 p-4 rounded-xl text-sm font-medium border flex items-start space-x-3 transition slide-fade-in" role="alert">
+      <span id="globalAlertIcon" class="mt-0.5 flex-shrink-0"></span>
+      <div id="globalAlertText" class="flex-1"></div>
+      <button onclick="dismissGlobalAlert()" class="text-stone-400 hover:text-stone-600 dark:hover:text-stone-200 focus:outline-none">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+      </button>
+    </div>
+
+    <!-- Centered Card -->
+    <div class="bg-white dark:bg-stone-900 rounded-3xl p-7 sm:p-9 shadow-xl shadow-stone-200/50 dark:shadow-black/60 border border-peach-100 dark:border-stone-800 transition">
+      
+      <!-- Tab Header Buttons -->
+      <div id="tabContainer" class="flex p-1.5 bg-peach-50 dark:bg-stone-950/70 rounded-2xl border border-peach-100 dark:border-stone-800 mb-7">
+        <button id="tabSignInBtn" type="button" onclick="switchAuthTab('signin')" class="flex-1 py-2.5 text-sm font-semibold rounded-xl transition text-stone-600 dark:text-stone-300 hover:text-stone-900 dark:hover:text-white tab-active">
+          Sign In
+        </button>
+        <button id="tabSignUpBtn" type="button" onclick="switchAuthTab('signup')" class="flex-1 py-2.5 text-sm font-semibold rounded-xl transition text-stone-600 dark:text-stone-300 hover:text-stone-900 dark:hover:text-white">
+          Sign Up
+        </button>
+      </div>
+
+      <!-- ================= SIGN IN FORM ================= -->
+      <form id="signInForm" onsubmit="handleSignIn(event)" class="slide-fade-in space-y-4" novalidate>
+        <div>
+          <label for="signinEmail" class="block text-xs font-semibold text-stone-700 dark:text-stone-300 uppercase tracking-wider mb-1.5">
+            Email Address
+          </label>
+          <div class="relative">
+            <input
+              type="email"
+              id="signinEmail"
+              autocomplete="email"
+              placeholder="you@example.com"
+              class="w-full px-4 py-3 rounded-xl bg-stone-50 dark:bg-stone-950/60 border border-stone-200 dark:border-stone-800 text-stone-900 dark:text-white placeholder-stone-400 focus:outline-none focus:ring-2 focus:ring-peach-500 focus:border-transparent text-sm transition"
+            >
+          </div>
+          <p id="signinEmailError" class="hidden mt-1.5 text-xs text-rose-500 dark:text-rose-400 font-medium"></p>
+        </div>
+
+        <div>
+          <div class="flex items-center justify-between mb-1.5">
+            <label for="signinPassword" class="block text-xs font-semibold text-stone-700 dark:text-stone-300 uppercase tracking-wider">
+              Password
+            </label>
+            <button type="button" onclick="openForgotPasswordView()" class="text-xs font-semibold text-peach-600 dark:text-peach-400 hover:underline focus:outline-none focus:ring-1 focus:ring-peach-500 rounded">
+              Forgot password?
+            </button>
+          </div>
+          <div class="relative">
+            <input
+              type="password"
+              id="signinPassword"
+              autocomplete="current-password"
+              placeholder="••••••••"
+              class="w-full pl-4 pr-11 py-3 rounded-xl bg-stone-50 dark:bg-stone-950/60 border border-stone-200 dark:border-stone-800 text-stone-900 dark:text-white placeholder-stone-400 focus:outline-none focus:ring-2 focus:ring-peach-500 focus:border-transparent text-sm transition"
+            >
+            <button
+              type="button"
+              onclick="togglePasswordVisibility('signinPassword', this)"
+              aria-label="Toggle password visibility"
+              class="absolute inset-y-0 right-0 pr-3.5 flex items-center text-stone-400 hover:text-stone-600 dark:hover:text-stone-200 focus:outline-none"
+            >
+              <!-- Eye open icon -->
+              <svg class="eye-icon w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/>
+              </svg>
+            </button>
+          </div>
+          <p id="signinPasswordError" class="hidden mt-1.5 text-xs text-rose-500 dark:text-rose-400 font-medium"></p>
+        </div>
+
+        <button
+          type="submit"
+          id="signInSubmitBtn"
+          class="w-full mt-2 py-3 px-4 rounded-xl bg-peach-500 hover:bg-peach-600 text-white font-semibold text-sm shadow-lg shadow-peach-500/25 focus:outline-none focus:ring-2 focus:ring-peach-400 focus:ring-offset-2 dark:focus:ring-offset-stone-900 flex items-center justify-center space-x-2 transition"
+        >
+          <span>Sign In</span>
+          <svg class="w-4 h-4 ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"/>
+          </svg>
+        </button>
+      </form>
+
+      <!-- ================= SIGN UP FORM ================= -->
+      <form id="signUpForm" onsubmit="handleSignUp(event)" class="hidden slide-fade-in space-y-4" novalidate>
+        <div>
+          <label for="signupEmail" class="block text-xs font-semibold text-stone-700 dark:text-stone-300 uppercase tracking-wider mb-1.5">
+            Email Address
+          </label>
+          <input
+            type="email"
+            id="signupEmail"
+            autocomplete="email"
+            placeholder="you@example.com"
+            class="w-full px-4 py-3 rounded-xl bg-stone-50 dark:bg-stone-950/60 border border-stone-200 dark:border-stone-800 text-stone-900 dark:text-white placeholder-stone-400 focus:outline-none focus:ring-2 focus:ring-peach-500 focus:border-transparent text-sm transition"
+          >
+          <p id="signupEmailError" class="hidden mt-1.5 text-xs text-rose-500 dark:text-rose-400 font-medium"></p>
+        </div>
+
+        <div>
+          <label for="signupPassword" class="block text-xs font-semibold text-stone-700 dark:text-stone-300 uppercase tracking-wider mb-1.5">
+            Create Password
+          </label>
+          <div class="relative">
+            <input
+              type="password"
+              id="signupPassword"
+              autocomplete="new-password"
+              placeholder="••••••••"
+              class="w-full pl-4 pr-11 py-3 rounded-xl bg-stone-50 dark:bg-stone-950/60 border border-stone-200 dark:border-stone-800 text-stone-900 dark:text-white placeholder-stone-400 focus:outline-none focus:ring-2 focus:ring-peach-500 focus:border-transparent text-sm transition"
+            >
+            <button
+              type="button"
+              onclick="togglePasswordVisibility('signupPassword', this)"
+              aria-label="Toggle password visibility"
+              class="absolute inset-y-0 right-0 pr-3.5 flex items-center text-stone-400 hover:text-stone-600 dark:hover:text-stone-200 focus:outline-none"
+            >
+              <svg class="eye-icon w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/>
+              </svg>
+            </button>
+          </div>
+          <p class="text-[11px] text-stone-500 dark:text-stone-400 mt-1">Must be at least 8 characters with at least one letter and one number.</p>
+          <p id="signupPasswordError" class="hidden mt-1.5 text-xs text-rose-500 dark:text-rose-400 font-medium"></p>
+        </div>
+
+        <div>
+          <label for="signupConfirmPassword" class="block text-xs font-semibold text-stone-700 dark:text-stone-300 uppercase tracking-wider mb-1.5">
+            Confirm Password
+          </label>
+          <div class="relative">
+            <input
+              type="password"
+              id="signupConfirmPassword"
+              autocomplete="new-password"
+              placeholder="••••••••"
+              class="w-full pl-4 pr-11 py-3 rounded-xl bg-stone-50 dark:bg-stone-950/60 border border-stone-200 dark:border-stone-800 text-stone-900 dark:text-white placeholder-stone-400 focus:outline-none focus:ring-2 focus:ring-peach-500 focus:border-transparent text-sm transition"
+            >
+            <button
+              type="button"
+              onclick="togglePasswordVisibility('signupConfirmPassword', this)"
+              aria-label="Toggle password visibility"
+              class="absolute inset-y-0 right-0 pr-3.5 flex items-center text-stone-400 hover:text-stone-600 dark:hover:text-stone-200 focus:outline-none"
+            >
+              <svg class="eye-icon w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/>
+              </svg>
+            </button>
+          </div>
+          <p id="signupConfirmError" class="hidden mt-1.5 text-xs text-rose-500 dark:text-rose-400 font-medium"></p>
+        </div>
+
+        <button
+          type="submit"
+          id="signUpSubmitBtn"
+          class="w-full mt-2 py-3 px-4 rounded-xl bg-peach-500 hover:bg-peach-600 text-white font-semibold text-sm shadow-lg shadow-peach-500/25 focus:outline-none focus:ring-2 focus:ring-peach-400 focus:ring-offset-2 dark:focus:ring-offset-stone-900 flex items-center justify-center space-x-2 transition"
+        >
+          <span>Register Account</span>
+          <svg class="w-4 h-4 ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z"/>
+          </svg>
+        </button>
+      </form>
+
+      <!-- ================= FORGOT PASSWORD VIEW ================= -->
+      <div id="forgotPasswordView" class="hidden slide-fade-in space-y-4">
+        <div class="text-center mb-3">
+          <h2 class="text-lg font-bold text-stone-900 dark:text-white">Reset Your Password</h2>
+          <p class="text-xs text-stone-500 dark:text-stone-400 mt-1">Enter your registered email address to receive password reset instructions.</p>
+        </div>
+
+        <form id="forgotPasswordForm" onsubmit="handleForgotPassword(event)" novalidate>
+          <div>
+            <label for="forgotEmail" class="block text-xs font-semibold text-stone-700 dark:text-stone-300 uppercase tracking-wider mb-1.5">
+              Email Address
+            </label>
+            <input
+              type="email"
+              id="forgotEmail"
+              placeholder="you@example.com"
+              class="w-full px-4 py-3 rounded-xl bg-stone-50 dark:bg-stone-950/60 border border-stone-200 dark:border-stone-800 text-stone-900 dark:text-white placeholder-stone-400 focus:outline-none focus:ring-2 focus:ring-peach-500 focus:border-transparent text-sm transition"
+            >
+            <p id="forgotEmailError" class="hidden mt-1.5 text-xs text-rose-500 dark:text-rose-400 font-medium"></p>
+          </div>
+
+          <button
+            type="submit"
+            id="forgotSubmitBtn"
+            class="w-full mt-4 py-3 px-4 rounded-xl bg-peach-500 hover:bg-peach-600 text-white font-semibold text-sm shadow-lg shadow-peach-500/25 focus:outline-none focus:ring-2 focus:ring-peach-400 transition"
+          >
+            Send Reset Instructions
+          </button>
+        </form>
+
+        <div id="forgotDemoNote" class="hidden p-3.5 rounded-xl bg-peach-50 dark:bg-stone-800/80 border border-peach-200 dark:border-stone-700 text-xs text-stone-700 dark:text-stone-300">
+          <p class="font-semibold text-peach-700 dark:text-peach-300 mb-1">💡 Demo Environment Note:</p>
+          <p>The reset token has been printed directly to your <strong>Node.js server terminal</strong> console. Open that link or use <a href="#" id="forgotDirectLink" class="underline text-peach-600 font-medium">this direct reset link</a>.</p>
+        </div>
+
+        <button
+          type="button"
+          onclick="closeForgotPasswordView()"
+          class="w-full py-2 text-xs font-semibold text-stone-500 dark:text-stone-400 hover:text-stone-800 dark:hover:text-stone-200 focus:outline-none transition"
+        >
+          &larr; Back to Sign In
+        </button>
+      </div>
+
+    </div>
+
+    <!-- Security & Tech Footnote -->
+    <p class="mt-6 text-center text-xs text-stone-400 dark:text-stone-500">
+      Protected with JWT &amp; bcryptjs &bull; CampusEvents API 2026
+    </p>
+  </main>
+
+  <footer class="w-full py-4 text-center text-xs text-stone-400 dark:text-stone-600">
+    &copy; 2026 CampusEvents &bull; SaiKet Systems Full Stack Development
+  </footer>
+
+  <script>
+    // ---------- Initial Token Check ----------
+    // If user already has a valid token, redirect to dashboard immediately
+    (async function checkExistingAuth() {
+      try {
+        const token = localStorage.getItem('token');
+        if (token) {
+          const res = await fetch('/auth/me', {
+            headers: { 'Authorization': `Bearer ${token}` }
+          });
+          if (res.ok) {
+            window.location.replace('/dashboard.html');
+          } else {
+            localStorage.removeItem('token');
+            localStorage.removeItem('user');
+          }
+        }
+      } catch (e) {
+        // network or parse issue; stay on login
+      }
+    })();
+
+    // ---------- Theme Management ----------
+    function initTheme() {
+      const savedTheme = localStorage.getItem('campus_theme');
+      const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+      if (savedTheme === 'dark' || (!savedTheme && prefersDark)) {
+        document.documentElement.classList.add('dark');
+        updateThemeUI(true);
+      } else {
+        document.documentElement.classList.remove('dark');
+        updateThemeUI(false);
+      }
+    }
+
+    function toggleTheme() {
+      const isDark = document.documentElement.classList.toggle('dark');
+      localStorage.setItem('campus_theme', isDark ? 'dark' : 'light');
+      updateThemeUI(isDark);
+    }
+
+    function updateThemeUI(isDark) {
+      const iconContainer = document.getElementById('themeIcon');
+      const label = document.getElementById('themeLabel');
+      if (isDark) {
+        iconContainer.innerHTML = `
+          <svg class="w-4 h-4 text-peach-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z"/>
+          </svg>`;
+        label.textContent = 'Light Mode';
+      } else {
+        iconContainer.innerHTML = `
+          <svg class="w-4 h-4 text-peach-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"/>
+          </svg>`;
+        label.textContent = 'Dark Mode';
+      }
+    }
+    document.getElementById('themeToggleBtn').addEventListener('click', toggleTheme);
+    initTheme();
+
+    // ---------- Tab Switching ----------
+    let currentTab = 'signin';
+    function switchAuthTab(tab) {
+      currentTab = tab;
+      clearAllErrors();
+      dismissGlobalAlert();
+
+      const signInBtn = document.getElementById('tabSignInBtn');
+      const signUpBtn = document.getElementById('tabSignUpBtn');
+      const signInForm = document.getElementById('signInForm');
+      const signUpForm = document.getElementById('signUpForm');
+      const forgotView = document.getElementById('forgotPasswordView');
+      const tabContainer = document.getElementById('tabContainer');
+
+      tabContainer.classList.remove('hidden');
+      forgotView.classList.add('hidden');
+
+      if (tab === 'signin') {
+        signInBtn.classList.add('tab-active');
+        signUpBtn.classList.remove('tab-active');
+        signInForm.classList.remove('hidden');
+        signUpForm.classList.add('hidden');
+        document.getElementById('signinEmail').focus();
+      } else {
+        signUpBtn.classList.add('tab-active');
+        signInBtn.classList.remove('tab-active');
+        signUpForm.classList.remove('hidden');
+        signInForm.classList.add('hidden');
+        document.getElementById('signupEmail').focus();
+      }
+    }
+
+    function openForgotPasswordView() {
+      clearAllErrors();
+      dismissGlobalAlert();
+      document.getElementById('signInForm').classList.add('hidden');
+      document.getElementById('signUpForm').classList.add('hidden');
+      document.getElementById('tabContainer').classList.add('hidden');
+      document.getElementById('forgotPasswordView').classList.remove('hidden');
+      document.getElementById('forgotDemoNote').classList.add('hidden');
+      document.getElementById('forgotEmail').value = document.getElementById('signinEmail').value.trim();
+      document.getElementById('forgotEmail').focus();
+    }
+
+    function closeForgotPasswordView() {
+      switchAuthTab('signin');
+    }
+
+    // ---------- Show/Hide Password Toggle ----------
+    function togglePasswordVisibility(inputId, btn) {
+      const input = document.getElementById(inputId);
+      const isPassword = input.type === 'password';
+      input.type = isPassword ? 'text' : 'password';
+
+      const eyeIcon = btn.querySelector('.eye-icon');
+      if (isPassword) {
+        // Eye with slash (hide)
+        eyeIcon.innerHTML = `
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l18 18"/>
+        `;
+      } else {
+        // Eye open (show)
+        eyeIcon.innerHTML = `
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/>
+        `;
+      }
+    }
+
+    // ---------- Validation Helpers ----------
+    const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
+    const passwordPattern = /^(?=.*[A-Za-z])(?=.*\d).{8,}$/;
+
+    function showFieldError(elemId, msg) {
+      const elem = document.getElementById(elemId);
+      if (elem) {
+        elem.textContent = msg;
+        elem.classList.remove('hidden');
+      }
+    }
+
+    function clearFieldError(elemId) {
+      const elem = document.getElementById(elemId);
+      if (elem) {
+        elem.textContent = '';
+        elem.classList.add('hidden');
+      }
+    }
+
+    function clearAllErrors() {
+      ['signinEmailError', 'signinPasswordError', 'signupEmailError', 'signupPasswordError', 'signupConfirmError', 'forgotEmailError'].forEach(clearFieldError);
+    }
+
+    function showGlobalAlert(type, message) {
+      const alertBox = document.getElementById('globalAlert');
+      const textElem = document.getElementById('globalAlertText');
+      const iconElem = document.getElementById('globalAlertIcon');
+
+      alertBox.classList.remove('hidden', 'bg-emerald-50', 'text-emerald-800', 'border-emerald-200', 'dark:bg-emerald-950/40', 'dark:text-emerald-300', 'dark:border-emerald-800', 'bg-rose-50', 'text-rose-800', 'border-rose-200', 'dark:bg-rose-950/40', 'dark:text-rose-300', 'dark:border-rose-800');
+
+      if (type === 'success') {
+        alertBox.classList.add('bg-emerald-50', 'text-emerald-800', 'border-emerald-200', 'dark:bg-emerald-950/40', 'dark:text-emerald-300', 'dark:border-emerald-800');
+        iconElem.innerHTML = `<svg class="w-5 h-5 text-emerald-600 dark:text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>`;
+      } else {
+        alertBox.classList.add('bg-rose-50', 'text-rose-800', 'border-rose-200', 'dark:bg-rose-950/40', 'dark:text-rose-300', 'dark:border-rose-800');
+        iconElem.innerHTML = `<svg class="w-5 h-5 text-rose-600 dark:text-rose-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>`;
+      }
+      textElem.textContent = message;
+    }
+
+    function dismissGlobalAlert() {
+      const alertBox = document.getElementById('globalAlert');
+      if (alertBox) alertBox.classList.add('hidden');
+    }
+
+    // ---------- Sign In Handler ----------
+    async function handleSignIn(e) {
+      e.preventDefault();
+      clearAllErrors();
+      dismissGlobalAlert();
+
+      const email = document.getElementById('signinEmail').value.trim();
+      const password = document.getElementById('signinPassword').value;
+
+      let hasError = false;
+      if (!email) {
+        showFieldError('signinEmailError', 'Please enter your email address');
+        hasError = true;
+      } else if (!emailPattern.test(email)) {
+        showFieldError('signinEmailError', 'Please enter a valid email address');
+        hasError = true;
+      }
+
+      if (!password) {
+        showFieldError('signinPasswordError', 'Please enter your password');
+        hasError = true;
+      }
+
+      if (hasError) return;
+
+      const submitBtn = document.getElementById('signInSubmitBtn');
+      const originalText = submitBtn.innerHTML;
+      submitBtn.disabled = true;
+      submitBtn.innerHTML = `
+        <svg class="animate-spin -ml-1 mr-2 h-4 w-4 text-white" fill="none" viewBox="0 0 24 24">
+          <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+          <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+        </svg>
+        <span>Signing in...</span>
+      `;
+
+      try {
+        const response = await fetch('/auth/login', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email, password })
+        });
+        const data = await response.json();
+
+        if (!response.ok) {
+          showFieldError('signinPasswordError', data.error || 'Incorrect email or password');
+          return;
+        }
+
+        // Store token and user
+        try {
+          localStorage.setItem('token', data.token);
+          localStorage.setItem('user', JSON.stringify(data.user));
+        } catch (storageErr) {
+          console.warn('localStorage access failed:', storageErr);
+        }
+
+        showGlobalAlert('success', 'Signed in successfully! Redirecting to dashboard...');
+        setTimeout(() => {
+          window.location.href = '/dashboard.html';
+        }, 350);
+
+      } catch (err) {
+        showGlobalAlert('error', 'Network error. Please check your connection and try again.');
+      } finally {
+        submitBtn.disabled = false;
+        submitBtn.innerHTML = originalText;
+      }
+    }
+
+    // ---------- Sign Up Handler ----------
+    async function handleSignUp(e) {
+      e.preventDefault();
+      clearAllErrors();
+      dismissGlobalAlert();
+
+      const email = document.getElementById('signupEmail').value.trim();
+      const password = document.getElementById('signupPassword').value;
+      const confirmPassword = document.getElementById('signupConfirmPassword').value;
+
+      let hasError = false;
+      if (!email) {
+        showFieldError('signupEmailError', 'Please enter your email address');
+        hasError = true;
+      } else if (!emailPattern.test(email)) {
+        showFieldError('signupEmailError', 'Please enter a valid email address');
+        hasError = true;
+      }
+
+      if (!password) {
+        showFieldError('signupPasswordError', 'Please enter a password');
+        hasError = true;
+      } else if (!passwordPattern.test(password)) {
+        showFieldError('signupPasswordError', 'Password must be at least 8 characters long and contain at least one letter and one number');
+        hasError = true;
+      }
+
+      if (!confirmPassword) {
+        showFieldError('signupConfirmError', 'Please confirm your password');
+        hasError = true;
+      } else if (password !== confirmPassword) {
+        showFieldError('signupConfirmError', 'Passwords do not match');
+        hasError = true;
+      }
+
+      if (hasError) return;
+
+      const submitBtn = document.getElementById('signUpSubmitBtn');
+      const originalText = submitBtn.innerHTML;
+      submitBtn.disabled = true;
+      submitBtn.innerHTML = `
+        <svg class="animate-spin -ml-1 mr-2 h-4 w-4 text-white" fill="none" viewBox="0 0 24 24">
+          <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+          <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+        </svg>
+        <span>Creating account...</span>
+      `;
+
+      try {
+        const response = await fetch('/auth/register', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email, password, confirmPassword })
+        });
+        const data = await response.json();
+
+        if (!response.ok) {
+          if (response.status === 409) {
+            showFieldError('signupEmailError', 'An account with this email already exists. Please sign in instead.');
+          } else {
+            showFieldError('signupPasswordError', data.error || 'Registration failed');
+          }
+          return;
+        }
+
+        // Switch to Sign In tab, pre-fill email, show green success message
+        switchAuthTab('signin');
+        document.getElementById('signinEmail').value = email;
+        document.getElementById('signinPassword').value = '';
+        showGlobalAlert('success', 'Account created successfully! Please sign in with your credentials.');
+
+      } catch (err) {
+        showGlobalAlert('error', 'Network error. Please check your connection and try again.');
+      } finally {
+        submitBtn.disabled = false;
+        submitBtn.innerHTML = originalText;
+      }
+    }
+
+    // ---------- Forgot Password Handler ----------
+    async function handleForgotPassword(e) {
+      e.preventDefault();
+      clearAllErrors();
+
+      const email = document.getElementById('forgotEmail').value.trim();
+      if (!email) {
+        showFieldError('forgotEmailError', 'Please enter your email address');
+        return;
+      }
+      if (!emailPattern.test(email)) {
+        showFieldError('forgotEmailError', 'Please enter a valid email address');
+        return;
+      }
+
+      const submitBtn = document.getElementById('forgotSubmitBtn');
+      const originalText = submitBtn.innerHTML;
+      submitBtn.disabled = true;
+      submitBtn.innerHTML = `<span>Sending...</span>`;
+
+      try {
+        const response = await fetch('/auth/forgot-password', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email })
+        });
+        const data = await response.json();
+
+        showGlobalAlert('success', data.message || 'If that email exists, a reset link has been sent.');
+        document.getElementById('forgotDemoNote').classList.remove('hidden');
+
+      } catch (err) {
+        showGlobalAlert('error', 'Network error. Please try again.');
+      } finally {
+        submitBtn.disabled = false;
+        submitBtn.innerHTML = originalText;
+      }
+    }
+  </script>
+</body>
+</html>
