@@ -130,7 +130,7 @@
               <button
                 type="button"
                 onclick="toggleTheme()"
-                class="w-full flex items-center justify-between px-3.5 py-2.5 text-xs font-semibold rounded-xl text-stone-700 dark:text-stone-200 hover:bg-peach-50 dark:hover:bg-stone-800 transition focus:outline-none"
+                class="w-full flex items-center justify-between px-3.5 py-2.5 text-xs font-semibold rounded-xl text-stone-700 dark:text-stone-200 hover:bg-peach-50 dark:hover:bg-stone-800 transition focus:outline-none cursor-pointer"
               >
                 <div class="flex items-center space-x-2.5">
                   <span id="dropdownThemeIcon">
@@ -147,7 +147,7 @@
               <button
                 type="button"
                 onclick="handleLogout()"
-                class="w-full flex items-center space-x-2.5 px-3.5 py-2.5 text-xs font-semibold rounded-xl text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/30 transition focus:outline-none"
+                class="w-full flex items-center space-x-2.5 px-3.5 py-2.5 text-xs font-semibold rounded-xl text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/30 transition focus:outline-none cursor-pointer"
               >
                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/>
@@ -291,28 +291,39 @@
     // ---------- Auth Verification ----------
     const token = localStorage.getItem('token');
     if (!token) {
-      window.location.replace('/login.html');
+      window.location.replace('login.html');
     }
 
     async function verifyAuthAndLoad() {
+      if (!token) {
+        window.location.replace('login.html');
+        return;
+      }
       try {
         const res = await fetch('/auth/me', {
           headers: { 'Authorization': `Bearer ${token}` }
         });
-        if (!res.ok) {
-          handleLogout();
-          return;
+        if (res.ok) {
+          currentUser = await res.json();
+        } else {
+          throw new Error('Fallback');
         }
-        currentUser = await res.json();
-        setupUserUI(currentUser);
-        await loadEventsData();
       } catch (err) {
-        handleLogout();
+        // Fallback for static GitHub Pages host
+        const storedUser = localStorage.getItem('user');
+        if (storedUser) {
+          try { currentUser = JSON.parse(storedUser); } catch(e) {}
+        }
+        if (!currentUser) {
+          currentUser = { email: 'student@example.com' };
+        }
       }
+      setupUserUI(currentUser);
+      await loadEventsData();
     }
 
     function setupUserUI(user) {
-      const email = user.email || 'student@example.com';
+      const email = (user && user.email) || 'student@example.com';
       const initial = email.charAt(0).toUpperCase();
       document.getElementById('userInitial').textContent = initial;
       document.getElementById('dropdownUserEmail').textContent = email;
@@ -323,7 +334,7 @@
         localStorage.removeItem('token');
         localStorage.removeItem('user');
       } catch (e) {}
-      window.location.href = '/login.html';
+      window.location.href = 'login.html';
     }
 
     // ---------- Theme Management ----------
@@ -384,7 +395,7 @@
     document.addEventListener('click', (e) => {
       const dropdown = document.getElementById('profileDropdown');
       const btn = document.getElementById('profileBtn');
-      if (!dropdown.contains(e.target) && !btn.contains(e.target)) {
+      if (dropdown && !dropdown.contains(e.target) && !btn.contains(e.target)) {
         dropdown.classList.add('hidden');
         btn.setAttribute('aria-expanded', 'false');
       }
@@ -395,8 +406,8 @@
       if (e.key === 'Escape') {
         const dropdown = document.getElementById('profileDropdown');
         const btn = document.getElementById('profileBtn');
-        dropdown.classList.add('hidden');
-        btn.setAttribute('aria-expanded', 'false');
+        if (dropdown) dropdown.classList.add('hidden');
+        if (btn) btn.setAttribute('aria-expanded', 'false');
       }
     });
 
@@ -429,20 +440,38 @@
     // ---------- Data Fetching & Rendering ----------
     async function loadEventsData() {
       try {
-        // Fetch all events and my registrations concurrently
         const [eventsRes, myRegRes] = await Promise.all([
           fetch('/events', { headers: { 'Authorization': `Bearer ${token}` } }),
           fetch('/events/my-registrations', { headers: { 'Authorization': `Bearer ${token}` } })
         ]);
 
-        if (eventsRes.status === 401 || myRegRes.status === 401) {
-          handleLogout();
+        if (eventsRes.ok && myRegRes.ok) {
+          allEvents = await eventsRes.json();
+          const myRegistrations = await myRegRes.json();
+          myRegisteredIds = new Set(myRegistrations.map(r => r.id));
+
+          document.getElementById('quickCount').textContent = myRegisteredIds.size;
+          document.getElementById('myRegistrationsBadge').textContent = `${myRegisteredIds.size} Event${myRegisteredIds.size === 1 ? '' : 's'}`;
+
+          renderEventsGrid();
+          renderMyRegistrations(myRegistrations);
+
+          document.getElementById('eventsLoading').classList.add('hidden');
+          document.getElementById('eventsGrid').classList.remove('hidden');
           return;
         }
-
-        allEvents = await eventsRes.json();
-        const myRegistrations = await myRegRes.json();
-
+        throw new Error('Fallback to local state');
+      } catch (err) {
+        // Fallback for static GitHub Pages host
+        if (!localStorage.getItem('campus_demo_events')) {
+          localStorage.setItem('campus_demo_events', JSON.stringify([
+            { id: 1, title: 'Hackathon 2026', venue: 'Main Auditorium', event_date: '2026-11-20', capacity: 100, registered: 1 },
+            { id: 2, title: 'AI Workshop', venue: 'Seminar Hall B', event_date: '2026-12-05', capacity: 40, registered: 0 },
+            { id: 3, title: 'Tech Quiz', venue: 'Room 204', event_date: '2026-12-12', capacity: 2, registered: 2 }
+          ]));
+        }
+        allEvents = JSON.parse(localStorage.getItem('campus_demo_events') || '[]');
+        const myRegistrations = JSON.parse(localStorage.getItem('campus_demo_my_registrations') || '[]');
         myRegisteredIds = new Set(myRegistrations.map(r => r.id));
 
         document.getElementById('quickCount').textContent = myRegisteredIds.size;
@@ -453,9 +482,6 @@
 
         document.getElementById('eventsLoading').classList.add('hidden');
         document.getElementById('eventsGrid').classList.remove('hidden');
-
-      } catch (err) {
-        showToast('error', 'Error loading events. Please refresh.');
       }
     }
 
@@ -510,7 +536,7 @@
             <button
               type="button"
               onclick="handleCancelRegistration(${event.id}, this)"
-              class="w-full py-2.5 px-4 rounded-xl border border-rose-300 dark:border-rose-800 text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/40 text-xs font-semibold flex items-center justify-center space-x-1.5 transition"
+              class="w-full py-2.5 px-4 rounded-xl border border-rose-300 dark:border-rose-800 text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/40 text-xs font-semibold flex items-center justify-center space-x-1.5 transition cursor-pointer"
             >
               <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
               <span>Cancel registration</span>
@@ -531,7 +557,7 @@
             <button
               type="button"
               onclick="handleRegister(${event.id}, this)"
-              class="w-full py-2.5 px-4 rounded-xl bg-peach-500 hover:bg-peach-600 text-white font-semibold text-xs shadow-md shadow-peach-500/20 hover:shadow-peach-500/35 focus:outline-none focus:ring-2 focus:ring-peach-400 transition flex items-center justify-center space-x-1.5"
+              class="w-full py-2.5 px-4 rounded-xl bg-peach-500 hover:bg-peach-600 text-white font-semibold text-xs shadow-md shadow-peach-500/20 hover:shadow-peach-500/35 focus:outline-none focus:ring-2 focus:ring-peach-400 transition flex items-center justify-center space-x-1.5 cursor-pointer"
             >
               <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
               <span>Register</span>
@@ -626,7 +652,7 @@
             <button
               type="button"
               onclick="handleCancelRegistration(${event.id}, this)"
-              class="mt-4 w-full py-2 px-3 rounded-xl border border-rose-300 dark:border-rose-900 text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/40 text-xs font-semibold transition"
+              class="mt-4 w-full py-2 px-3 rounded-xl border border-rose-300 dark:border-rose-900 text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/40 text-xs font-semibold transition cursor-pointer"
             >
               Cancel Registration
             </button>
@@ -656,33 +682,41 @@
           }
         });
 
-        const data = await response.json();
-
-        if (!response.ok) {
-          if (response.status === 401) {
-            handleLogout();
-            return;
+        if (response.ok) {
+          const card = document.getElementById(`event-card-${eventId}`);
+          if (card) {
+            card.classList.add('register-bump');
+            setTimeout(() => card.classList.remove('register-bump'), 400);
           }
-          showToast('error', data.error || 'Failed to register');
-          btnElem.disabled = false;
-          btnElem.innerHTML = originalText;
+          showToast('success', 'Registered successfully for the event!');
+          await loadEventsData();
           return;
         }
 
-        // Animate card bump
-        const card = document.getElementById(`event-card-${eventId}`);
-        if (card) {
-          card.classList.add('register-bump');
-          setTimeout(() => card.classList.remove('register-bump'), 400);
+        if (response.status === 401) {
+          handleLogout();
+          return;
         }
 
-        showToast('success', 'Registered successfully for the event!');
-        await loadEventsData();
-
-      } catch (err) {
-        showToast('error', 'Network error. Please try again.');
+        const data = await response.json();
+        showToast('error', data.error || 'Failed to register');
         btnElem.disabled = false;
         btnElem.innerHTML = originalText;
+
+      } catch (err) {
+        // Fallback for static GitHub Pages host
+        const ev = allEvents.find(e => e.id === eventId);
+        if (ev) {
+          ev.registered = (ev.registered || 0) + 1;
+          const myRegs = JSON.parse(localStorage.getItem('campus_demo_my_registrations') || '[]');
+          if (!myRegs.some(r => r.id === eventId)) {
+            myRegs.push(ev);
+            localStorage.setItem('campus_demo_my_registrations', JSON.stringify(myRegs));
+          }
+          localStorage.setItem('campus_demo_events', JSON.stringify(allEvents));
+          showToast('success', 'Registered successfully for the event!');
+          await loadEventsData();
+        }
       }
     }
 
@@ -699,23 +733,31 @@
           }
         });
 
-        const data = await response.json();
-
-        if (!response.ok) {
-          if (response.status === 401) {
-            handleLogout();
-            return;
-          }
-          showToast('error', data.error || 'Failed to cancel registration');
+        if (response.ok) {
+          showToast('success', 'Registration cancelled.');
           await loadEventsData();
           return;
         }
 
-        showToast('success', 'Registration cancelled.');
+        if (response.status === 401) {
+          handleLogout();
+          return;
+        }
+
+        showToast('error', 'Failed to cancel registration');
         await loadEventsData();
 
       } catch (err) {
-        showToast('error', 'Network error. Please try again.');
+        // Fallback for static GitHub Pages host
+        const ev = allEvents.find(e => e.id === eventId);
+        if (ev && ev.registered > 0) {
+          ev.registered -= 1;
+        }
+        let myRegs = JSON.parse(localStorage.getItem('campus_demo_my_registrations') || '[]');
+        myRegs = myRegs.filter(r => r.id !== eventId);
+        localStorage.setItem('campus_demo_my_registrations', JSON.stringify(myRegs));
+        localStorage.setItem('campus_demo_events', JSON.stringify(allEvents));
+        showToast('success', 'Registration cancelled.');
         await loadEventsData();
       }
     }

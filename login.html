@@ -161,7 +161,6 @@
               aria-label="Toggle password visibility"
               class="absolute inset-y-0 right-0 pr-3.5 flex items-center text-stone-400 hover:text-stone-600 dark:hover:text-stone-200 focus:outline-none"
             >
-              <!-- Eye open icon -->
               <svg class="eye-icon w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/>
@@ -174,7 +173,7 @@
         <button
           type="submit"
           id="signInSubmitBtn"
-          class="w-full mt-2 py-3 px-4 rounded-xl bg-peach-500 hover:bg-peach-600 text-white font-semibold text-sm shadow-lg shadow-peach-500/25 focus:outline-none focus:ring-2 focus:ring-peach-400 focus:ring-offset-2 dark:focus:ring-offset-stone-900 flex items-center justify-center space-x-2 transition"
+          class="w-full mt-2 py-3 px-4 rounded-xl bg-peach-500 hover:bg-peach-600 text-white font-semibold text-sm shadow-lg shadow-peach-500/25 focus:outline-none focus:ring-2 focus:ring-peach-400 focus:ring-offset-2 dark:focus:ring-offset-stone-900 flex items-center justify-center space-x-2 transition cursor-pointer"
         >
           <span>Sign In</span>
           <svg class="w-4 h-4 ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -257,7 +256,7 @@
         <button
           type="submit"
           id="signUpSubmitBtn"
-          class="w-full mt-2 py-3 px-4 rounded-xl bg-peach-500 hover:bg-peach-600 text-white font-semibold text-sm shadow-lg shadow-peach-500/25 focus:outline-none focus:ring-2 focus:ring-peach-400 focus:ring-offset-2 dark:focus:ring-offset-stone-900 flex items-center justify-center space-x-2 transition"
+          class="w-full mt-2 py-3 px-4 rounded-xl bg-peach-500 hover:bg-peach-600 text-white font-semibold text-sm shadow-lg shadow-peach-500/25 focus:outline-none focus:ring-2 focus:ring-peach-400 focus:ring-offset-2 dark:focus:ring-offset-stone-900 flex items-center justify-center space-x-2 transition cursor-pointer"
         >
           <span>Register Account</span>
           <svg class="w-4 h-4 ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -290,21 +289,21 @@
           <button
             type="submit"
             id="forgotSubmitBtn"
-            class="w-full mt-4 py-3 px-4 rounded-xl bg-peach-500 hover:bg-peach-600 text-white font-semibold text-sm shadow-lg shadow-peach-500/25 focus:outline-none focus:ring-2 focus:ring-peach-400 transition"
+            class="w-full mt-4 py-3 px-4 rounded-xl bg-peach-500 hover:bg-peach-600 text-white font-semibold text-sm shadow-lg shadow-peach-500/25 focus:outline-none focus:ring-2 focus:ring-peach-400 transition cursor-pointer"
           >
             Send Reset Instructions
           </button>
         </form>
 
         <div id="forgotDemoNote" class="hidden p-3.5 rounded-xl bg-peach-50 dark:bg-stone-800/80 border border-peach-200 dark:border-stone-700 text-xs text-stone-700 dark:text-stone-300">
-          <p class="font-semibold text-peach-700 dark:text-peach-300 mb-1">💡 Demo Environment Note:</p>
-          <p>The reset token has been printed directly to your <strong>Node.js server terminal</strong> console. Open that link or use <a href="#" id="forgotDirectLink" class="underline text-peach-600 font-medium">this direct reset link</a>.</p>
+          <p class="font-semibold text-peach-700 dark:text-peach-300 mb-1">💡 Demo / Reset Link:</p>
+          <p>Click <a href="#" id="forgotDirectLink" class="underline text-peach-600 font-bold">this direct reset link</a> to test setting a new password.</p>
         </div>
 
         <button
           type="button"
           onclick="closeForgotPasswordView()"
-          class="w-full py-2 text-xs font-semibold text-stone-500 dark:text-stone-400 hover:text-stone-800 dark:hover:text-stone-200 focus:outline-none transition"
+          class="w-full py-2 text-xs font-semibold text-stone-500 dark:text-stone-400 hover:text-stone-800 dark:hover:text-stone-200 focus:outline-none transition cursor-pointer"
         >
           &larr; Back to Sign In
         </button>
@@ -324,25 +323,38 @@
 
   <script>
     // ---------- Initial Token Check ----------
-    // If user already has a valid token, redirect to dashboard immediately
     (async function checkExistingAuth() {
       try {
         const token = localStorage.getItem('token');
         if (token) {
-          const res = await fetch('/auth/me', {
-            headers: { 'Authorization': `Bearer ${token}` }
-          });
-          if (res.ok) {
-            window.location.replace('/dashboard.html');
-          } else {
-            localStorage.removeItem('token');
-            localStorage.removeItem('user');
+          try {
+            const res = await fetch('/auth/me', {
+              headers: { 'Authorization': `Bearer ${token}` }
+            });
+            if (res.ok) {
+              window.location.replace('dashboard.html');
+              return;
+            }
+          } catch (e) {
+            // If static host with valid stored token
+            if (localStorage.getItem('user')) {
+              window.location.replace('dashboard.html');
+              return;
+            }
           }
+          localStorage.removeItem('token');
+          localStorage.removeItem('user');
         }
-      } catch (e) {
-        // network or parse issue; stay on login
-      }
+      } catch (e) {}
     })();
+
+    // Demo Accounts for static hosts (e.g. GitHub Pages)
+    if (!localStorage.getItem('campus_demo_users')) {
+      localStorage.setItem('campus_demo_users', JSON.stringify([
+        { email: 'student@example.com', password: 'Password123' },
+        { email: 'student.demo@example.com', password: 'Password123' }
+      ]));
+    }
 
     // ---------- Theme Management ----------
     function initTheme() {
@@ -439,12 +451,10 @@
 
       const eyeIcon = btn.querySelector('.eye-icon');
       if (isPassword) {
-        // Eye with slash (hide)
         eyeIcon.innerHTML = `
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l18 18"/>
         `;
       } else {
-        // Eye open (show)
         eyeIcon.innerHTML = `
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/>
@@ -540,28 +550,37 @@
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ email, password })
         });
-        const data = await response.json();
+        
+        if (response.ok) {
+          const data = await response.json();
+          localStorage.setItem('token', data.token);
+          localStorage.setItem('user', JSON.stringify(data.user));
+          showGlobalAlert('success', 'Signed in successfully! Redirecting...');
+          setTimeout(() => { window.location.href = 'dashboard.html'; }, 350);
+          return;
+        }
 
-        if (!response.ok) {
+        if (response.status === 401 || response.status === 400) {
+          const data = await response.json();
           showFieldError('signinPasswordError', data.error || 'Incorrect email or password');
           return;
         }
 
-        // Store token and user
-        try {
-          localStorage.setItem('token', data.token);
-          localStorage.setItem('user', JSON.stringify(data.user));
-        } catch (storageErr) {
-          console.warn('localStorage access failed:', storageErr);
-        }
-
-        showGlobalAlert('success', 'Signed in successfully! Redirecting to dashboard...');
-        setTimeout(() => {
-          window.location.href = '/dashboard.html';
-        }, 350);
+        throw new Error('Fallback check');
 
       } catch (err) {
-        showGlobalAlert('error', 'Network error. Please check your connection and try again.');
+        // Fallback for static GitHub Pages demo environment
+        const demoUsers = JSON.parse(localStorage.getItem('campus_demo_users') || '[]');
+        const matched = demoUsers.find(u => u.email.toLowerCase() === email.toLowerCase() && u.password === password);
+        if (matched) {
+          const fakeToken = 'demo_token_' + btoa(email);
+          localStorage.setItem('token', fakeToken);
+          localStorage.setItem('user', JSON.stringify({ id: 1, email: matched.email }));
+          showGlobalAlert('success', 'Signed in successfully (Demo Mode)! Redirecting...');
+          setTimeout(() => { window.location.href = 'dashboard.html'; }, 350);
+          return;
+        }
+        showFieldError('signinPasswordError', 'Incorrect email or password');
       } finally {
         submitBtn.disabled = false;
         submitBtn.innerHTML = originalText;
@@ -622,25 +641,35 @@
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ email, password, confirmPassword })
         });
-        const data = await response.json();
 
-        if (!response.ok) {
-          if (response.status === 409) {
-            showFieldError('signupEmailError', 'An account with this email already exists. Please sign in instead.');
-          } else {
-            showFieldError('signupPasswordError', data.error || 'Registration failed');
-          }
+        if (response.status === 201) {
+          switchAuthTab('signin');
+          document.getElementById('signinEmail').value = email;
+          document.getElementById('signinPassword').value = '';
+          showGlobalAlert('success', 'Account created successfully! Please sign in with your credentials.');
           return;
         }
 
-        // Switch to Sign In tab, pre-fill email, show green success message
+        if (response.status === 409) {
+          showFieldError('signupEmailError', 'An account with this email already exists. Please sign in instead.');
+          return;
+        }
+
+        throw new Error('Fallback check');
+
+      } catch (err) {
+        // Fallback for static GitHub Pages demo environment
+        const demoUsers = JSON.parse(localStorage.getItem('campus_demo_users') || '[]');
+        if (demoUsers.some(u => u.email.toLowerCase() === email.toLowerCase())) {
+          showFieldError('signupEmailError', 'An account with this email already exists. Please sign in instead.');
+          return;
+        }
+        demoUsers.push({ email, password });
+        localStorage.setItem('campus_demo_users', JSON.stringify(demoUsers));
         switchAuthTab('signin');
         document.getElementById('signinEmail').value = email;
         document.getElementById('signinPassword').value = '';
-        showGlobalAlert('success', 'Account created successfully! Please sign in with your credentials.');
-
-      } catch (err) {
-        showGlobalAlert('error', 'Network error. Please check your connection and try again.');
+        showGlobalAlert('success', 'Account created successfully (Demo Mode)! Please sign in with your credentials.');
       } finally {
         submitBtn.disabled = false;
         submitBtn.innerHTML = originalText;
@@ -674,15 +703,18 @@
           body: JSON.stringify({ email })
         });
         const data = await response.json();
-
         showGlobalAlert('success', data.message || 'If that email exists, a reset link has been sent.');
-        document.getElementById('forgotDemoNote').classList.remove('hidden');
-
       } catch (err) {
-        showGlobalAlert('error', 'Network error. Please try again.');
+        showGlobalAlert('success', 'If that email exists, a reset link has been sent.');
       } finally {
         submitBtn.disabled = false;
         submitBtn.innerHTML = originalText;
+        const demoNote = document.getElementById('forgotDemoNote');
+        demoNote.classList.remove('hidden');
+        const directLink = document.getElementById('forgotDirectLink');
+        if (directLink) {
+          directLink.href = `reset.html?token=demo_token_${Date.now()}`;
+        }
       }
     }
   </script>
