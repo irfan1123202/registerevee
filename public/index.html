@@ -40,12 +40,12 @@
     try {
       const token = localStorage.getItem('token');
       if (token) {
-        window.location.replace('/dashboard.html');
+        window.location.replace('dashboard.html');
       } else {
-        window.location.replace('/login.html');
+        window.location.replace('login.html');
       }
     } catch (e) {
-      window.location.replace('/login.html');
+      window.location.replace('login.html');
     }
   </script>
 </head>
@@ -59,9 +59,9 @@
     </div>
     <p class="text-sm font-semibold text-stone-600 dark:text-stone-300">Loading CampusEvents Portal...</p>
     <div class="space-x-3 text-xs">
-      <a href="/login.html" class="text-peach-600 hover:underline">Go to Login</a>
+      <a href="login.html" class="text-peach-600 hover:underline">Go to Login</a>
       <span>&bull;</span>
-      <a href="/dashboard.html" class="text-peach-600 hover:underline">Go to Dashboard</a>
+      <a href="dashboard.html" class="text-peach-600 hover:underline">Go to Dashboard</a>
     </div>
   </div>
 </body>
